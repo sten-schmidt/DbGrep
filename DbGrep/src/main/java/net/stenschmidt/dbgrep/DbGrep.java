@@ -1,4 +1,5 @@
-package net.stenschmidt.sqlexamples.oracle;
+package net.stenschmidt.dbgrep;
+
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -19,7 +20,7 @@ public class DbGrep {
 
 		try {
 			try (Connection connection = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/orcl", "scott",
-					"****")) {
+					"*****")) {
 
 				String delimiter = ";";
 				String tableSchemaPattern = "SCOTT";
