@@ -1,6 +1,5 @@
 package net.stenschmidt.dbgrep;
 
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -12,10 +11,12 @@ import java.util.List;
 
 public class DbGrep {
 
+	//TODO: Support Procedures, Functions, Views, ...
+	
     private static boolean _currentTablePrinted;
     private static String _currentTABLE;
     private static String _currentTABLE_FIELDS;
-    
+   
     public static void main(String... args) {
 
         try {
@@ -26,8 +27,7 @@ public class DbGrep {
                 String tableSchemaPattern = "SCOTT";
                 String tableNamePattern = "%";
                 
-                //TODO: Support case
-                String filter = "EMP";
+                String filter = "king";
 
                 int timeout = 5;
 
@@ -35,22 +35,17 @@ public class DbGrep {
 
                     List<String> tablesList = getTablesList(connection, delimiter, tableSchemaPattern,
                             tableNamePattern);
-                    //tablesList.forEach(System.out::println);
-
                     statement.setQueryTimeout(timeout);
-
                     tablesList.forEach(table -> {
-                        
                         _currentTablePrinted = false;
                         String sql = String.format("SELECT * FROM %s", table);
                         _currentTABLE = String.format("TABLE        : %s", table);
                         conditionalPrintTable(_currentTABLE, filter);
 
-                        ResultSet resultSet;
-                        try {
-                            resultSet = statement.executeQuery(sql);
-                            ResultSetMetaData metaData = resultSet.getMetaData();
+                        try(ResultSet resultSet = statement.executeQuery(sql)) {
 
+                            ResultSetMetaData metaData = resultSet.getMetaData();
+                            
                             String headers = "";
                             for (int x = 1; x < metaData.getColumnCount() + 1; x++) {
                                 headers += (x == 1 ? "" : delimiter) + metaData.getColumnLabel(x);
@@ -74,9 +69,10 @@ public class DbGrep {
             String tableNamePattern) throws SQLException {
 
         List<String> result = new ArrayList<String>();
-        ResultSet dbTables = connection.getMetaData().getTables(null, tableSchemaPattern, tableNamePattern, null);
-        while (dbTables.next()) {
-            result.add(dbTables.getString("TABLE_NAME"));
+        try (ResultSet dbTables = connection.getMetaData().getTables(null, tableSchemaPattern, tableNamePattern, null)) {
+	        while (dbTables.next()) {
+	            result.add(dbTables.getString("TABLE_NAME"));
+	        }
         }
         return result;
     }
@@ -98,7 +94,7 @@ public class DbGrep {
     
     public static boolean conditionalPrint(String printMsg, String filter) {
         boolean result = false;
-        if(printMsg.contains(filter) || filter.equals("*") || filter.equals("%")) {
+        if(printMsg.toUpperCase().contains(filter.toUpperCase()) || filter.equals("*") || filter.equals("%")) {
             if (!_currentTablePrinted) {
                 System.out.println(_currentTABLE);
                 _currentTablePrinted = true;
